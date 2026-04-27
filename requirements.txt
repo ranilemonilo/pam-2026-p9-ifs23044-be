@@ -4,3 +4,5 @@ flask-migrate==4.0.7
 anthropic==0.28.0
 httpx==0.27.0
 python-dotenv==1.0.1
+requests==2.31.0
+gunicorn==21.2.0
