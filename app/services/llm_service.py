@@ -19,21 +19,12 @@ Jawab HANYA dalam format JSON array berikut, tanpa teks lain:
 ]
 Pastikan resep autentik, detail, dan dalam Bahasa Indonesia."""
 
-    headers = {
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {llm_token}",
-    }
-
-    payload = {
-        "model": "claude-3-5-haiku-20241022",
-        "max_tokens": 4096,
-        "messages": [{"role": "user", "content": prompt}],
-    }
-
     response = requests.post(
-        f"{base_url}/v1/messages",
-        json=payload,
-        headers=headers,
+        f"{base_url}/llm/chat",
+        json={
+            "token": llm_token,
+            "chat": prompt,
+        },
         timeout=60
     )
 
@@ -42,11 +33,16 @@ Pastikan resep autentik, detail, dan dalam Bahasa Indonesia."""
 
     data = response.json()
 
-    # Format Anthropic: data["content"][0]["text"]
+    # Cek format response dari delcom
+    if isinstance(data, str):
+        return data
+    if "data" in data:
+        return data["data"]
+    if "response" in data:
+        return data["response"]
+    if "message" in data:
+        return data["message"]
     if "content" in data:
-        return data["content"][0]["text"]
-    # Format OpenAI: data["choices"][0]["message"]["content"]
-    if "choices" in data:
-        return data["choices"][0]["message"]["content"]
+        return data["content"]
 
-    raise Exception(f"Format response tidak dikenali: {str(data)[:200]}")
+    return str(data)
