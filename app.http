@@ -1,0 +1,68 @@
+## Global Variables
+@baseurl=http://127.0.0.1:5000
+
+## ─── Login ────────────────────────────────────────────────────────────────────
+# @name PostLogin
+POST {{baseurl}}/recipes/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "admin123"
+}
+
+###
+## Response PostLogin
+# {
+#   "token": "admin:admin123",
+#   "message": "Login berhasil"
+# }
+
+
+## ─── Generate Recipe ──────────────────────────────────────────────────────────
+# @name PostGenerateRecipe
+POST {{baseurl}}/recipes/generate
+Content-Type: application/json
+X-Admin-Token: admin:admin123
+
+{
+  "category": "masakan Padang",
+  "total": 3
+}
+
+###
+## Response PostGenerateRecipe
+# {
+#   "data": [
+#     {
+#       "id": 1,
+#       "title": "Rendang Daging Sapi",
+#       "ingredients": ["500g daging sapi", "200ml santan", "..."],
+#       "steps": ["Potong daging...", "Tumis bumbu...", "..."],
+#       "category": "masakan Padang",
+#       "difficulty": "Sulit",
+#       "duration_minutes": 120,
+#       "created_at": "2026-04-25T10:00:00"
+#     }
+#   ],
+#   "category": "masakan Padang",
+#   "total": 3
+# }
+
+
+## ─── Get Recipes ──────────────────────────────────────────────────────────────
+# @name GetRecipes
+GET {{baseurl}}/recipes?page=1&per_page=10
+Content-Type: application/json
+X-Admin-Token: admin:admin123
+
+###
+
+
+## ─── Delete Recipe ────────────────────────────────────────────────────────────
+# @name DeleteRecipe
+DELETE {{baseurl}}/recipes/1
+Content-Type: application/json
+X-Admin-Token: admin:admin123
+
+###
