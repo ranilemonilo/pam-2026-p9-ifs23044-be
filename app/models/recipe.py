@@ -1,27 +1,17 @@
-from datetime import datetime
-from app.utils.extensions import db
+from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey
+from datetime import datetime, timezone
+from app.extensions import Base
 
-class Recipe(db.Model):
+
+class Recipe(Base):
     __tablename__ = "recipes"
 
-    id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(200), nullable=False)
-    ingredients = db.Column(db.Text, nullable=False)   # JSON string
-    steps = db.Column(db.Text, nullable=False)         # JSON string
-    category = db.Column(db.String(100), nullable=False)
-    difficulty = db.Column(db.String(50), nullable=False)
-    duration_minutes = db.Column(db.Integer, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
-    def to_dict(self):
-        import json
-        return {
-            "id": self.id,
-            "title": self.title,
-            "ingredients": json.loads(self.ingredients),
-            "steps": json.loads(self.steps),
-            "category": self.category,
-            "difficulty": self.difficulty,
-            "duration_minutes": self.duration_minutes,
-            "created_at": self.created_at.isoformat(),
-        }
+    id = Column(Integer, primary_key=True)
+    title = Column(String(200))
+    ingredients = Column(Text)   # JSON string
+    steps = Column(Text)         # JSON string
+    category = Column(String(100))
+    difficulty = Column(String(50))
+    duration_minutes = Column(Integer)
+    request_id = Column(Integer, ForeignKey("requests.id"))
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))

@@ -1,57 +1,106 @@
 import json
-from app.utils.extensions import db
+from app.extensions import SessionLocal
 from app.models.recipe import Recipe
-from app.services.llm_service import generate_recipes_with_ai
-from app.utils.parser import parse_recipes_from_text
+from app.models.request_log import RequestLog
+from app.services.llm_service import generate_from_llm
+from app.utils.parser import parse_llm_response
 
 
-def get_recipes(page: int, per_page: int) -> dict:
-    pagination = (
-        Recipe.query.order_by(Recipe.created_at.desc())
-        .paginate(page=page, per_page=per_page, error_out=False)
-    )
-    return {
-        "data": [r.to_dict() for r in pagination.items],
-        "page": page,
-        "per_page": per_page,
-        "total": pagination.total,
-        "total_pages": pagination.pages,
-    }
+def create_recipes(category: str, total: int):
+    session = SessionLocal()
+    try:
+        prompt = f"""
+Dalam format JSON, buat {total} resep masakan dengan kategori "{category}".
+Format:
+{{
+    "recipes": [
+        {{
+            "title": "Nama Resep",
+            "ingredients": ["bahan 1", "bahan 2"],
+            "steps": ["Langkah 1", "Langkah 2"],
+            "difficulty": "Mudah/Sedang/Sulit",
+            "duration_minutes": 30
+        }}
+    ]
+}}
+Jawab HANYA dengan JSON, tanpa teks lain. Gunakan Bahasa Indonesia.
+"""
+        result = generate_from_llm(prompt)
+        recipes = parse_llm_response(result)
+
+        # Simpan request log
+        req_log = RequestLog(category=category)
+        session.add(req_log)
+        session.commit()
+
+        saved = []
+        for item in recipes:
+            r = Recipe(
+                title=item.get("title", ""),
+                ingredients=json.dumps(item.get("ingredients", []), ensure_ascii=False),
+                steps=json.dumps(item.get("steps", []), ensure_ascii=False),
+                category=category,
+                difficulty=item.get("difficulty", "Sedang"),
+                duration_minutes=item.get("duration_minutes", 30),
+                request_id=req_log.id,
+            )
+            session.add(r)
+            saved.append(item)
+
+        session.commit()
+        return saved
+
+    except Exception as e:
+        session.rollback()
+        raise e
+    finally:
+        session.close()
 
 
-def generate_and_save_recipes(category: str, total: int) -> dict:
-    raw_text = generate_recipes_with_ai(category, total)
-    recipes_data = parse_recipes_from_text(raw_text)
-
-    if not recipes_data:
-        raise ValueError("AI tidak menghasilkan resep yang valid.")
-
-    saved = []
-    for item in recipes_data:
-        recipe = Recipe(
-            title=item.get("title", "Tanpa Judul"),
-            ingredients=json.dumps(item.get("ingredients", []), ensure_ascii=False),
-            steps=json.dumps(item.get("steps", []), ensure_ascii=False),
-            category=item.get("category", category),
-            difficulty=item.get("difficulty", "Sedang"),
-            duration_minutes=item.get("duration_minutes", 30),
+def get_all_recipes(page: int = 1, per_page: int = 10):
+    session = SessionLocal()
+    try:
+        query = session.query(Recipe)
+        total = query.count()
+        data = (
+            query
+            .order_by(Recipe.id.desc())
+            .offset((page - 1) * per_page)
+            .limit(per_page)
+            .all()
         )
-        db.session.add(recipe)
-        saved.append(recipe)
+        result = [
+            {
+                "id": r.id,
+                "title": r.title,
+                "ingredients": json.loads(r.ingredients or "[]"),
+                "steps": json.loads(r.steps or "[]"),
+                "category": r.category,
+                "difficulty": r.difficulty,
+                "duration_minutes": r.duration_minutes,
+                "created_at": r.created_at.isoformat(),
+            }
+            for r in data
+        ]
+        return {
+            "page": page,
+            "per_page": per_page,
+            "total": total,
+            "total_pages": (total + per_page - 1) // per_page,
+            "data": result,
+        }
+    finally:
+        session.close()
 
-    db.session.commit()
 
-    return {
-        "data": [r.to_dict() for r in saved],
-        "category": category,
-        "total": len(saved),
-    }
-
-
-def delete_recipe(recipe_id: int) -> bool:
-    recipe = Recipe.query.get(recipe_id)
-    if not recipe:
-        return False
-    db.session.delete(recipe)
-    db.session.commit()
-    return True
+def remove_recipe(recipe_id: int):
+    session = SessionLocal()
+    try:
+        r = session.query(Recipe).filter(Recipe.id == recipe_id).first()
+        if not r:
+            return False
+        session.delete(r)
+        session.commit()
+        return True
+    finally:
+        session.close()

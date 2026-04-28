@@ -1,20 +1,11 @@
+from sqlalchemy import Column, Integer, String, DateTime
 from datetime import datetime
-from app.utils.extensions import db
+from app.extensions import Base
 
-class RequestLog(db.Model):
-    __tablename__ = "request_logs"
 
-    id = db.Column(db.Integer, primary_key=True)
-    endpoint = db.Column(db.String(200), nullable=False)
-    method = db.Column(db.String(10), nullable=False)
-    status_code = db.Column(db.Integer, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+class RequestLog(Base):
+    __tablename__ = "requests"
 
-    def to_dict(self):
-        return {
-            "id": self.id,
-            "endpoint": self.endpoint,
-            "method": self.method,
-            "status_code": self.status_code,
-            "created_at": self.created_at.isoformat(),
-        }
+    id = Column(Integer, primary_key=True)
+    category = Column(String(100))
+    created_at = Column(DateTime, default=datetime.utcnow)

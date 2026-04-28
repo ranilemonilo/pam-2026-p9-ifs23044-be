@@ -1,22 +1,19 @@
 from flask import Flask
-from .utils.config import Config
-from .utils.extensions import db, migrate
+from flask_cors import CORS
+from app.extensions import Base, engine
+from app.routes.recipe_routes import recipe_bp
 
 
 def create_app():
     app = Flask(__name__)
-    app.config.from_object(Config)
 
-    # Init extensions
-    db.init_app(app)
-    migrate.init_app(app, db)
+    # Enable CORS
+    CORS(app)
 
-    # Register blueprints
-    from .routes.recipe_routes import recipe_bp
+    # Create tables
+    Base.metadata.create_all(bind=engine)
+
+    # Register blueprint
     app.register_blueprint(recipe_bp)
-
-    # Auto-create tables
-    with app.app_context():
-        db.create_all()
 
     return app
