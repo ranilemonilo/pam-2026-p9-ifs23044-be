@@ -1,10 +1,9 @@
 import json
-from app.extensions import SessionLocal
-from app.models.recipe import Recipe
-from app.models.request_log import RequestLog
-from app.services.llm_service import generate_from_llm
-from app.utils.parser import parse_llm_response
-
+from ..extensions import SessionLocal
+from ..models.recipe import Recipe
+from ..models.request_log import RequestLog
+from .llm_service import generate_from_llm
+from ..utils.parser import parse_llm_response
 
 def create_recipes(category: str, total: int):
     session = SessionLocal()
@@ -28,7 +27,6 @@ Jawab HANYA dengan JSON, tanpa teks lain. Gunakan Bahasa Indonesia.
         result = generate_from_llm(prompt)
         recipes = parse_llm_response(result)
 
-        # Simpan request log
         req_log = RequestLog(category=category)
         session.add(req_log)
         session.commit()
@@ -49,13 +47,11 @@ Jawab HANYA dengan JSON, tanpa teks lain. Gunakan Bahasa Indonesia.
 
         session.commit()
         return saved
-
     except Exception as e:
         session.rollback()
         raise e
     finally:
         session.close()
-
 
 def get_all_recipes(page: int = 1, per_page: int = 10):
     session = SessionLocal()
@@ -91,7 +87,6 @@ def get_all_recipes(page: int = 1, per_page: int = 10):
         }
     finally:
         session.close()
-
 
 def remove_recipe(recipe_id: int):
     session = SessionLocal()

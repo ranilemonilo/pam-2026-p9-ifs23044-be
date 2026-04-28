@@ -1,7 +1,7 @@
 from flask import Flask
 from flask_cors import CORS
-from app.extensions import Base, engine
-from app.routes.recipe_routes import recipe_bp
+from .extensions import Base, engine
+from .routes.recipe_routes import recipe_bp
 
 
 def create_app():

@@ -1,21 +1,11 @@
 import json
 import re
 
-def parse_recipes_from_text(text: str) -> list:
-    """
-    Parse AI-generated recipe JSON from text response.
-    Returns list of recipe dicts.
-    """
-    # Try to extract JSON array from the response
-    json_match = re.search(r'\[.*\]', text, re.DOTALL)
-    if json_match:
-        try:
-            return json.loads(json_match.group())
-        except json.JSONDecodeError:
-            pass
-
-    # Fallback: try direct parse
+def parse_llm_response(result):
     try:
-        return json.loads(text)
-    except json.JSONDecodeError:
-        return []
+        content = result.get("response") or result
+        content = re.sub(r"```json\n?|\n?```", "", content).strip()
+        parsed = json.loads(content)
+        return parsed.get("recipes", [])
+    except Exception as e:
+        raise Exception(f"Invalid JSON from LLM: {str(e)}")

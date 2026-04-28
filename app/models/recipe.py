@@ -1,15 +1,13 @@
 from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey
 from datetime import datetime, timezone
-from app.extensions import Base
-
+from ..extensions import Base
 
 class Recipe(Base):
     __tablename__ = "recipes"
-
     id = Column(Integer, primary_key=True)
     title = Column(String(200))
-    ingredients = Column(Text)   # JSON string
-    steps = Column(Text)         # JSON string
+    ingredients = Column(Text)
+    steps = Column(Text)
     category = Column(String(100))
     difficulty = Column(String(50))
     duration_minutes = Column(Integer)

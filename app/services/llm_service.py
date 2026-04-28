@@ -1,6 +1,5 @@
 import requests
-from app.config import Config
-
+from ..config import Config
 
 def generate_from_llm(prompt: str):
     response = requests.post(
@@ -10,8 +9,6 @@ def generate_from_llm(prompt: str):
             "chat": prompt
         }
     )
-
     if response.status_code != 200:
         raise Exception("LLM request failed")
-
     return response.json()
